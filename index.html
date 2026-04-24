@@ -19,7 +19,14 @@ async function connect() {
     log("Conectado al dispositivo");
 
     // 🔥 ESCANEO COMPLETO
-    const services = await server.getPrimaryServices();
+   const service = await server.getPrimaryService('dc405470-a351-4a59-97d8-2e2e3b207fbb');
+log("Servicio encontrado: " + service.uuid);
+
+const chars = await service.getCharacteristics();
+for (let char of chars) {
+  log("Char: " + char.uuid);
+  log("Properties: " + JSON.stringify(char.properties));
+}
 
     for (let service of services) {
       log("Service: " + service.uuid);
