@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>LED Control</title>
+<style>
+body {
+  background: #0f0f0f;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+  margin-top: 50px;
+}
+button, input {
+  margin: 10px;
+  padding: 10px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: none;
+}
+button {
+  background: #1f1f1f;
+  color: white;
+}
+#log {
+  margin-top: 20px;
+  font-size: 12px;
+  color: #aaa;
+}
+</style>
+</head>
+<body>
+
+<h1>LED Control</h1>
+
+<button onclick="connect()">Conectar</button><br>
+
+<input type="color" id="colorPicker"><br>
+
+<button onclick="setColor()">Cambiar Color</button>
+<button onclick="turnOn()">Encender</button>
+<button onclick="turnOff()">Apagar</button>
+
+<div id="log"></div>
+
+<script>
+let device, characteristic;
+
+function log(msg){
+  document.getElementById("log").innerText += msg + "\n";
+}
+
+async function connect() {
+  try {
+    device = await navigator.bluetooth.requestDevice({
+      filters: [{ namePrefix: "ELK" }],
+      optionalServices: ['0000ffe0-0000-1000-8000-00805f9b34fb']
+    });
+
+    const server = await device.gatt.connect();
+    log("Conectado al dispositivo");
+
+    const service = await server.getPrimaryService('0000ffe0-0000-1000-8000-00805f9b34fb');
+    log("Servicio encontrado");
+
+    characteristic = await service.getCharacteristic('0000ffe1-0000-1000-8000-00805f9b34fb');
+    log("Characteristic lista");
+
+  } catch (error) {
+    log("Error: " + error);
+  }
+}
+
+function hexToRgb(hex) {
+  let bigint = parseInt(hex.slice(1), 16);
+  return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+}
+
+async function setColor() {
+  let color = document.getElementById("colorPicker").value;
+  let [r, g, b] = hexToRgb(color);
+
+  let cmd = new Uint8Array([0x7e, 0x07, 0x05, r, g, b, 0x00, 0xef]);
+  await characteristic.writeValue(cmd);
+}
+
+async function turnOn() {
+  let cmd = new Uint8Array([0x7e, 0x04, 0x01, 0xff, 0x00, 0x00, 0x00, 0xef]);
+  await characteristic.writeValue(cmd);
+}
+
+async function turnOff() {
+  let cmd = new Uint8Array([0x7e, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0xef]);
+  await characteristic.writeValue(cmd);
+}
+</script>
+
+</body>
+</html>
