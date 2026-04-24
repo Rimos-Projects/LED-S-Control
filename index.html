@@ -54,15 +54,31 @@ async function connect() {
   try {
     device = await navigator.bluetooth.requestDevice({
       filters: [{ namePrefix: "ELK" }],
-      optionalServices: ['0000ffb0-0000-1000-8000-00805f9b34fb']
+      optionalServices: [
+        '0000ffb0-0000-1000-8000-00805f9b34fb',
+        'dc405470-a351-4a59-97d8-2e2e3b207fbb'
+      ]
     });
 
     const server = await device.gatt.connect();
     log("Conectado al dispositivo");
 
-   const service = await server.getPrimaryService('0000ffb0-0000-1000-8000-00805f9b34fb');
-    
-characteristic = await service.getCharacteristic('0000ffb1-0000-1000-8000-00805f9b34fb');
+    // 🔥 ESCANEO COMPLETO (sin F12)
+    const services = await server.getPrimaryServices();
+
+    for (let service of services) {
+      log("Service: " + service.uuid);
+
+      const chars = await service.getCharacteristics();
+      for (let char of chars) {
+        log("  Char: " + char.uuid);
+        log("    Properties: " + JSON.stringify(char.properties));
+      }
+    }
+
+    // 👇 TU CÓDIGO ORIGINAL (no modificado)
+    const service = await server.getPrimaryService('0000ffb0-0000-1000-8000-00805f9b34fb');
+    characteristic = await service.getCharacteristic('0000ffb1-0000-1000-8000-00805f9b34fb');
 
   } catch (error) {
     log("Error: " + error);
